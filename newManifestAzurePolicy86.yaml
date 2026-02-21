@@ -62,7 +62,7 @@ paths:
             type: string
           description: >
             The Azure Subscription ID provided by the user.
-            This is a GUID such as 4bfd1047-ae46-4bd4-9175-78a1ee7b62b5.
+            This is a GUID such as a1b2c3d4-e5f6-7890-abcd-ef1234567890.
             Extract this value from the user's query.
         - name: api-version
           in: query
@@ -133,7 +133,7 @@ paths:
             type: string
           description: >
             The Azure Subscription ID provided by the user.
-            This is a GUID such as 4bfd1047-ae46-4bd4-9175-78a1ee7b62b5.
+            This is a GUID such as a1b2c3d4-e5f6-7890-abcd-ef1234567890.
             Extract this value from the user's query.
         - name: api-version
           in: query
@@ -286,7 +286,7 @@ paths:
             type: string
           description: >
             The Azure Subscription ID provided by the user.
-            This is a GUID such as 4bfd1047-ae46-4bd4-9175-78a1ee7b62b5.
+            This is a GUID such as a1b2c3d4-e5f6-7890-abcd-ef1234567890.
             Extract this value from the user's query.
         - name: api-version
           in: query
@@ -406,7 +406,7 @@ paths:
             type: string
           description: >
             The Azure Subscription ID provided by the user.
-            This is a GUID such as 4bfd1047-ae46-4bd4-9175-78a1ee7b62b5.
+            This is a GUID such as a1b2c3d4-e5f6-7890-abcd-ef1234567890.
             Extract this value from the user's query.
         - name: remediationName
           in: path
@@ -433,6 +433,9 @@ paths:
                   properties:
                     policyAssignmentId:
                       type: string
+                    policyDefinitionReferenceId:
+                      type: string
+                      description: Required when remediating a specific definition within an initiative.  
                     resourceDiscoveryMode:
                       type: string
                       description: "ExistingNonCompliant or ReEvaluateCompliance"
@@ -455,7 +458,7 @@ paths:
             type: string
           description: >
             The Azure Subscription ID provided by the user.
-            This is a GUID such as 4bfd1047-ae46-4bd4-9175-78a1ee7b62b5.
+            This is a GUID such as a1b2c3d4-e5f6-7890-abcd-ef1234567890.
             Extract this value from the user's query.
         - name: api-version
           in: query

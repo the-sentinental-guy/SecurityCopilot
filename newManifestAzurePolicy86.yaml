@@ -418,6 +418,7 @@ paths:
           required: true
           schema:
             type: string
+            enum: ["2021-10-01"]
             default: "2021-10-01"
       requestBody:
         required: true
@@ -465,6 +466,7 @@ paths:
           required: true
           schema:
             type: string
+            enum: ["2019-10-01"]
             default: "2019-10-01"
       responses:
         "202":

@@ -52,7 +52,7 @@ SkillGroups:
             policyDefinitionAction is the primary effect source. policyDefinitionCategory is the primary category source.
 
             STEP 3 — Policy Definition Lookup:
-            For each unique non-compliant policyDefinitionId from Step 1, extract the policy definition name (the last segment of the ID).
+            For each unique non-compliant policyDefinitionId from Step 1, extract the exact string AFTER the final slash to get the policy name. For example: if ID is '/providers/.../policyDefinitions/5eb6d64a', the name is exactly '5eb6d64a'. DO NOT include the slash.
             Call GetPolicyDefinition for each extracted name (batch max 5 at a time).
             For each match, extract: properties.displayName, properties.description, properties.policyType (BuiltIn, Custom, Static).
             Category and effect are NOT sourced from this operation.
@@ -108,6 +108,7 @@ SkillGroups:
 
             Prioritized Policy Details (TIER 1 first through TIER 4 last):
             Per policy show table with: Policy=displayName (Step 3), Description=one-line (Step 3), Category=policyDefinitionCategory (Step 2), Resources Affected=nonCompliantResources (Step 1), Non-compliant Since=oldest timestamp (Step 2), Current Effect=effect (Step 1) or policyDefinitionAction (Step 2), Effect Assessment=Correct or Misconfigured with recommended effect, Remediation=steps (Step 6), Auto-Remediable=Yes (user can request)/No, Effort=Quick Fix/Medium/Complex.
+            If the definition metadata (Name, Description) cannot be found in Step 3 (e.g., due to Custom Policy scoping), use the raw GUID for Policy Name, 'Custom Policy (Metadata unavailable)' for Description, and 'Custom' for Category. Continue prioritization based on resourceType and nonCompliantResources count.
 
             Recommended Next Actions: List top 3-5 highest-priority actions in order of impact.
         ChildSkills:

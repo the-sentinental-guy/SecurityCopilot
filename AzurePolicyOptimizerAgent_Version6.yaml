@@ -111,6 +111,7 @@ SkillGroups:
             Recommended Next Actions: List top 3-5 highest-priority actions in order of impact.
         ChildSkills:
           - ListPolicyDefinitions
+          - GetPolicyDefinition
           - ListPolicyAssignments
           - QueryPolicyComplianceStates
           - SummarizeCompliance

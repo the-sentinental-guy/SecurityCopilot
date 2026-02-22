@@ -1,10 +1,10 @@
 Descriptor:
-  Name: AzurePolicyOptimizerAgentV4
+  Name: YashurePolicyOptimizerAgentV4
   Description: >-
     Analyzes non-compliant Azure policies, prioritizes them by security impact
     based on policy intent, assesses whether policy effects are correctly
     configured, and provides actionable remediation steps with effort estimates.
-  DisplayName: Azure Policy Optimizer Agent V3
+  DisplayName: Yashure Policy Optimizer Agent V4
   CatalogScope: UserWorkspace
   Enabled: true
   Prerequisites:
@@ -13,8 +13,8 @@ Descriptor:
 SkillGroups:
   - Format: Agent
     Skills:
-      - Name: AzurePolicyOptimizerAgentV3
-        DisplayName: Azure Policy Optimizer Agent V3
+      - Name: YashurePolicyOptimizerAgentV4
+        DisplayName: Yashure Policy Optimizer Agent V4
         Description: >-
           Analyzes non-compliant Azure policies, prioritizes them by security
           impact based on policy intent, assesses whether policy effects are
@@ -120,8 +120,8 @@ SkillGroups:
           - TriggerRemediation
           - TriggerPolicyScan
 AgentDefinitions:
-  - Name: AzurePolicyOptimizerAgentV3
-    DisplayName: Azure Policy Optimizer Agent V3
+  - Name: YashurePolicyOptimizerAgentV4
+    DisplayName: Yashure Policy Optimizer Agent V4
     Description: >-
       Analyzes non-compliant Azure policies, prioritizes them by security impact
       based on policy intent, assesses whether policy effects are correctly
@@ -140,7 +140,7 @@ AgentDefinitions:
     Triggers:
       - Name: DefaultTrigger
         DefaultPollPeriodSeconds: 86400
-        ProcessSkill: AzurePolicyOptimizerAgentV3.AzurePolicyOptimizerAgentV3
+        ProcessSkill: YashurePolicyOptimizerAgentV4.YashurePolicyOptimizerAgentV4
     RequiredSkillsets:
       - AzurePolicyManager
     PreviewState: Private

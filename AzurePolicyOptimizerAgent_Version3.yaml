@@ -1,5 +1,5 @@
 Descriptor:
-  Name: AzurePolicyOptimizerAgentV3
+  Name: AzurePolicyOptimizerAgentV4
   Description: >-
     Analyzes non-compliant Azure policies, prioritizes them by security impact
     based on policy intent, assesses whether policy effects are correctly

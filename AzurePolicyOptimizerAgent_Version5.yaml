@@ -9,7 +9,7 @@ Descriptor:
   Enabled: true
   Prerequisites:
     - AzurePolicyManager
-  Icon: ''
+  Icon: ""
 SkillGroups:
   - Format: Agent
     Skills:
@@ -119,6 +119,7 @@ SkillGroups:
 
             Recommended Next Actions: List top 3-5 highest-priority actions in order of impact.
         ChildSkills:
+          - ListPolicyDefinitions
           - ListPolicyAssignments
           - QueryPolicyComplianceStates
           - SummarizeCompliance

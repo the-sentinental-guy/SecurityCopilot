@@ -1,10 +1,10 @@
 Descriptor:
-  Name: AzurePolicyOptimizerAgentV3
+  Name: AzurePolicyOptimizerAgentV11
   Description: >-
     Analyzes non-compliant Azure policies, prioritizes them by security impact
     based on policy intent, assesses whether policy effects are correctly
     configured, and provides actionable remediation steps with effort estimates.
-  DisplayName: Azure Policy Optimizer Agent V3
+  DisplayName: Azure Policy Optimizer Agent V11
   CatalogScope: Workspace
   Enabled: true
   Prerequisites:
@@ -14,8 +14,8 @@ Descriptor:
 SkillGroups:
   - Format: Agent
     Skills:
-      - Name: AzurePolicyOptimizerAgentV3
-        DisplayName: Azure Policy Optimizer Agent V3
+      - Name: AzurePolicyOptimizerAgentV11
+        DisplayName: Azure Policy Optimizer Agent V11
         Description: >-
           Analyzes non-compliant Azure policies, prioritizes them by security
           impact based on policy intent, assesses whether policy effects are
@@ -142,8 +142,8 @@ SkillGroups:
           - TriggerRemediation
           - TriggerPolicyScan
 AgentDefinitions:
-  - Name: AzurePolicyOptimizerAgentV3
-    DisplayName: Azure Policy Optimizer Agent V3
+  - Name: AzurePolicyOptimizerAgentV11
+    DisplayName: Azure Policy Optimizer Agent V11
     Description: >-
       Analyzes non-compliant Azure policies, prioritizes them by security impact
       based on policy intent, assesses whether policy effects are correctly
@@ -162,7 +162,7 @@ AgentDefinitions:
     Triggers:
       - Name: DefaultTrigger
         DefaultPollPeriodSeconds: 86400
-        ProcessSkill: AzurePolicyOptimizerAgentV3.AzurePolicyOptimizerAgentV3
+        ProcessSkill: AzurePolicyOptimizerAgentV11.AzurePolicyOptimizerAgentV11
     RequiredSkillsets:
       - AzurePolicyManager
     PreviewState: Private

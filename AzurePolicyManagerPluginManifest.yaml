@@ -1,6 +1,6 @@
 Descriptor:
   Name: AzurePolicyManager
-  DisplayName: AzurePolicy Yashure
+  DisplayName: YashurePolicy Azure
   Description: Plugin to query Azure Policy definitions, retrieve compliance states, list unhealthy resources, trigger evaluations, and generate compliance summaries.
   DescriptionForModel: Use this plugin to access Azure Policy data. It can retrieve lists of non-compliant (unhealthy) resources, summarize compliance states for reporting, list policy definitions, and trigger compliance scans.
   SupportedAuthTypes:
@@ -13,4 +13,4 @@ SkillGroups:
   - Format: API
     Settings:
       # This URL must host the OpenAPI spec defined in the next section
-      OpenApiSpecUrl: https://gist.githubusercontent.com/the-sentinental-guy/f0cf49c6553f592f44b5284c920395f7/raw/e02be23dbeb96237ad70535e7ef623a2459c7b43/newManifestAzurePolicy86.yaml
+      OpenApiSpecUrl: https://gist.githubusercontent.com/the-sentinental-guy/f61105171230490b72d29851bbc59bcd/raw/71e3ccc1f6442931c08df584bf929e7cb0abbe6c/newManifestAzurePolicy89.yaml

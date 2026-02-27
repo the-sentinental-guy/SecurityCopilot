@@ -1,0 +1,160 @@
+Descriptor:
+  Name: AzurePolicyOptimizerAgentV3
+  Description: >-
+    Analyzes non-compliant Azure policies, prioritizes them by security impact
+    based on policy intent, assesses whether policy effects are correctly
+    configured, and provides actionable remediation steps with effort estimates.
+  DisplayName: Azure Policy Optimizer Agent V3
+  CatalogScope: Workspace
+  Enabled: true
+  Prerequisites:
+    - AzurePolicyManager
+  CanToggle: true
+  Icon: ""
+SkillGroups:
+  - Format: Agent
+    Skills:
+      - Name: AzurePolicyOptimizerAgentV3
+        DisplayName: Azure Policy Optimizer Agent V3
+        Description: >-
+          Analyzes non-compliant Azure policies, prioritizes them by security
+          impact based on policy intent, assesses whether policy effects are
+          correctly configured, and provides actionable remediation steps with
+          effort estimates.
+        Inputs:
+          - Name: Subscription ID
+            Description: >-
+              The Azure subscription ID for which you want to analyze the Azure
+              policies
+            DefaultValue: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+            Required: true
+        Settings:
+          Instructions: >-
+            You are the Azure Policy Compliance Analyzer. Execute 4 steps
+            then output a structured report followed by an HTML summary.
+
+            RULES: Do NOT call ListPolicyDefinitions. Do NOT trigger
+            TriggerRemediation or TriggerPolicyScan unless user explicitly
+            asks. Use PascalCase in $filter fields.
+
+            STEP 1 — Compliance Overview: Call SummarizeCompliance with
+            $top=5. From top-level results record nonCompliantPolicies and
+            nonCompliantResources totals. Scan all policyDefinitions in all
+            returned policyAssignments. Find unique policyDefinitionIds where
+            nonCompliantResources > 0. Select the TOP 10 using this
+            importance order: policies with effect=deny first, then
+            deployIfNotExists, then auditIfNotExists, then audit. Within
+            same effect, higher nonCompliantResources first. Record each
+            policy's effect, nonCompliantResources, policyAssignmentId, and
+            policyDefinitionReferenceId. Also count the total number of
+            unique policyDefinitionIds (both compliant and non-compliant)
+            across all returned assignments to calculate compliance
+            percentage.
+
+            STEP 2 — Policy Details and Resources (top 10 only): For each
+            of the 10 selected policyDefinitionIds, extract the name (last
+            segment after final /). Call GetPolicyDefinition to get
+            displayName, description, metadata.category. If it returns
+            PolicyDefinitionNotFound, skip and use policyDefinitionName
+            from Step 3 instead. Process in two batches of 5.
+
+            STEP 3 — Affected Resources (top 10 only): For each of the 10
+            policyDefinitionIds, call QueryPolicyComplianceStates with
+            $filter: ComplianceState eq 'NonCompliant' and
+            PolicyDefinitionId eq '{id}', $top: 3, $select:
+            resourceId,resourceType,resourceGroup,timestamp,
+            policyDefinitionAction,policyDefinitionName,
+            policyDefinitionCategory. Process in two batches of 5. Use
+            policyDefinitionName and policyDefinitionCategory as fallback
+            if GetPolicyDefinition failed in Step 2.
+
+            STEP 4 — Output Report:
+
+            SECTION A - COMPLIANCE SCORE: Show compliance percentage as
+            ((totalPolicies - nonCompliantPolicies) / totalPolicies * 100)
+            rounded to nearest whole number. Show nonCompliantPolicies
+            count and nonCompliantResources count.
+
+            SECTION B - TOP 10 NON-COMPLIANT POLICIES (sorted by
+            importance): For each policy show a subsection with:
+            displayName (Step 2, or policyDefinitionName from Step 3 as
+            fallback), Category (metadata.category from Step 2, or
+            policyDefinitionCategory from Step 3, if still tbd then
+            infer from displayName), Effect, nonCompliantResources count.
+            Then a table of affected resources from Step 3 with columns:
+            Resource (last segment of resourceId), Resource Group,
+            Resource Type. Below each table show: Remediation (one
+            specific CLI command or Portal step for the resourceType),
+            Effort (Quick Fix if auto-remediable or simple config,
+            Medium if manual updates needed, Complex if architectural
+            change), Auto-Remediable (Yes if effect is deployIfNotExists
+            or modify, No otherwise).
+
+            SECTION C - TOP 10 NON-COMPLIANT RESOURCES: From all
+            QueryPolicyComplianceStates responses in Step 3, collect
+            unique resources (deduplicate by resourceId). Pick the 10
+            resources that appear in the most policies, breaking ties by
+            oldest timestamp. Show table with columns: Resource (last
+            segment of resourceId), Resource Group, Resource Category
+            (map resourceType namespace: Microsoft.Compute=Compute,
+            Microsoft.Network=Networking, Microsoft.Sql=Database,
+            Microsoft.Storage=Storage, Microsoft.KeyVault=Security,
+            other=General), Age (days since timestamp), Policies Violated
+            (count of distinct policies this resource appears in).
+
+            SECTION D - HTML EXECUTIVE SUMMARY: Output a code block with
+            language html containing a self-contained HTML page. Use this
+            exact structure: html head with style tag, body with div
+            container. CSS: body background #f3f4f6 font-family Segoe
+            UI Arial margin 0. Container: max-width 1250px margin auto
+            background #fff padding 20px. Header div: background
+            linear-gradient(135deg,#0f172a,#020617) color white padding
+            18px border-radius 8px. H1 font-size 26px margin 0.
+            Section boxes: background #f8fafc border-left 6px solid
+            #2563eb padding 14px margin-top 10px. Tables: width 100%
+            border-collapse collapse. Table headers: background #020617
+            color white padding 8px font-size 13px. Table cells: border
+            1px solid #e5e7eb padding 8px font-size 13px. Score display:
+            font-size 48px font-weight 800 color #16a34a if above 80%
+            or #ea580c if 50-80% or #dc2626 if below 50%. Footer:
+            margin-top 30px font-size 12px color #475569 text Generated
+            by Microsoft Security Copilot - Azure Policy. The HTML must
+            contain ONLY: report title Azure Policy Compliance Report,
+            subscription ID, date, compliance score percentage in large
+            font, non-compliant policies count, resources affected count,
+            and a compact table of the top 5 policy displayNames with
+            their resource counts and effects.
+        ChildSkills:
+          - ListPolicyDefinitions
+          - GetPolicyDefinition
+          - ListPolicyAssignments
+          - QueryPolicyComplianceStates
+          - SummarizeCompliance
+          - TriggerRemediation
+          - TriggerPolicyScan
+AgentDefinitions:
+  - Name: AzurePolicyOptimizerAgentV3
+    DisplayName: Azure Policy Optimizer Agent V3
+    Description: >-
+      Analyzes non-compliant Azure policies, prioritizes them by security impact
+      based on policy intent, assesses whether policy effects are correctly
+      configured, and provides actionable remediation steps with effort
+      estimates.
+    Product: Custom
+    Publisher: Custom
+    AgentSingleInstanceConstraint: Tenant
+    Settings:
+      - Name: Subscription ID
+        Description: >-
+          The Azure subscription ID for which you want to analyze the Azure
+          policies
+        Required: true
+        DefaultValue: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+    Triggers:
+      - Name: DefaultTrigger
+        DefaultPollPeriodSeconds: 86400
+        ProcessSkill: AzurePolicyOptimizerAgentV3.AzurePolicyOptimizerAgentV3
+    RequiredSkillsets:
+      - AzurePolicyManager
+    PreviewState: Private
+    PublisherSource: Custom

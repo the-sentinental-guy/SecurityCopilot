@@ -1,0 +1,41 @@
+Descriptor:
+  Name: AzurePolicyOptimizerAgentV3
+  DisplayName: Azure Policy Optimizer Agent V3
+  Description: Lists the top 10 non-compliant Azure policies ranked by severity.
+  Icon: ""
+AgentDefinitions:
+  - Name: AzurePolicyOptimizerAgentV3
+    DisplayName: Azure Policy Optimizer Agent V3
+    Description: Lists the top 10 non-compliant Azure policies ranked by severity.
+    Product: Custom
+    AgentSingleInstanceConstraint: None
+    Publisher: Custom
+    RequiredSkillsets:
+      - AzurePolicyManager
+    Triggers:
+      - Name: DefaultTrigger
+        DefaultPollPeriodSeconds: 86400
+        ProcessSkill: AzurePolicyOptimizerAgentV3
+SkillGroups:
+  - Format: Agent
+    Skills:
+      - Name: AzurePolicyOptimizerAgentV3
+        DisplayName: Azure Policy Optimizer Agent V3
+        Description: Lists the top 10 non-compliant Azure policies ranked by severity.
+        Inputs:
+          - Name: Subscription ID
+            Description: The Azure subscription ID to analyze.
+            DefaultValue: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+            Required: true
+        Settings:
+          Instructions: >-
+            You are an Azure Policy compliance analyst. Your job is to list the top 10 non-compliant policies.
+
+            STEP 1: Call SummarizeCompliance with $top=5. From the response, extract all unique policyDefinitionIds where nonCompliantResources is greater than 0. For each, record the effect and nonCompliantResources count. Sort by effect importance (deny first, then deployIfNotExists, then auditIfNotExists, then audit), then by nonCompliantResources descending. Select the top 10.
+
+            STEP 2: For each of the top 10 policyDefinitionIds, extract the policy name (last segment after the final /). Call GetPolicyDefinition with that name. If it returns an error, use the policy name as the display name. Process in two batches of 5.
+
+            STEP 3: Output a numbered list of the top 10 non-compliant policies. For each show: rank, display name (or policy name if lookup failed), effect, and number of non-compliant resources.
+        ChildSkills:
+          - SummarizeCompliance
+          - GetPolicyDefinition

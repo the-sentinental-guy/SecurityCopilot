@@ -1,0 +1,147 @@
+Descriptor:
+  Name: AzurePolicyOptimizerAgentV3
+  Description: >-
+    Analyzes non-compliant Azure policies, prioritizes by security impact,
+    assesses effect correctness, and provides remediation with effort estimates.
+  DisplayName: Azure Policy Optimizer Agent V3
+  CatalogScope: Workspace
+  Enabled: true
+  Prerequisites:
+    - AzurePolicyManager
+  CanToggle: true
+  Icon: ""
+SkillGroups:
+  - Format: Agent
+    Skills:
+      - Name: AzurePolicyOptimizerAgentV3
+        DisplayName: Azure Policy Optimizer Agent V3
+        Description: >-
+          Analyzes non-compliant Azure policies, prioritizes by security impact,
+          assesses effect correctness, and provides remediation with effort estimates.
+        Inputs:
+          - Name: Subscription ID
+            Description: >-
+              The Azure subscription ID for which you want to analyze the Azure
+              policies
+            DefaultValue: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+            Required: true
+        Settings:
+          Instructions: >-
+            You are the Azure Policy Compliance Prioritizer. Execute 3 steps
+            then present a report.
+
+            RULES: Never trigger TriggerRemediation or TriggerPolicyScan
+            unless user asks. PascalCase in $filter. Do NOT call
+            ListPolicyDefinitions, ListPolicyAssignments, or
+            SummarizeCompliance.
+
+            STEP 1 — Get Non-Compliant Records:
+            Call QueryPolicyComplianceStates with:
+            $filter: ComplianceState eq 'NonCompliant'
+            $top: 50
+            $select: policyDefinitionId,policyDefinitionName,policyDefinitionAction,policyDefinitionCategory,policyAssignmentId,policyAssignmentName,resourceId,resourceType,resourceGroup,timestamp
+            $orderby: timestamp asc
+            From results: group by policyDefinitionId, count resources
+            per policy, sort by count desc, take top 10 policies. For
+            each policy record: policyDefinitionId, effect
+            (policyDefinitionAction), category
+            (policyDefinitionCategory), policyAssignmentId, resource
+            count, list of resourceIds with resourceGroup, resourceType,
+            timestamp. Also identify top 10 unique resources by counting
+            how many distinct policies each resource violates.
+
+            STEP 2 — Policy Names (top 5 only):
+            For the top 5 policyDefinitionIds only, extract the name
+            (last segment after /). Call GetPolicyDefinition. If not
+            found, call GetBuiltInPolicyDefinition (no subscriptionId).
+            Extract displayName, description, metadata.category. For
+            policies 6-10, use policyDefinitionName from Step 1 as
+            displayName.
+
+            STEP 3 — Priority Score and Assessment:
+            Per top 10 policy compute PRIORITY SCORE (max 50):
+            IMPACT: >=20 resources=30, 10-19=20, 5-9=15, 2-4=10, 1=5.
+            EFFECT: deny=10, deployIfNotExists=8, auditIfNotExists=5,
+            audit=3.
+            AGE (oldest timestamp): >30d=10, >14d=7, >7d=5, >3d=3,
+            else=1.
+            Sort by score desc.
+            Flag MISCONFIGURED if: PREVENT intent uses audit (recommend
+            deny), MONITOR intent uses deny (recommend audit),
+            AUTO-DEPLOY intent uses audit/deny (recommend
+            deployIfNotExists).
+
+            OUTPUT:
+
+            SECTION 1 Executive Summary:
+            Subscription, date. From Step 1 data compute: total unique
+            non-compliant policies found, total non-compliant resources.
+            Compliance note: these are the policies with active
+            violations. Misconfigured count, quick-fix count
+            (deployIfNotExists/modify effects).
+
+            SECTION 2 Priority Scorecard:
+            Table of 10 policies by score desc. Columns: Rank, Policy
+            Name, Category, Score/50, Non-Compliant Resources, Effect,
+            Age (days since oldest timestamp), Auto-Remediable (Yes if
+            deployIfNotExists/modify), Effort (Quick Fix < 1hr if
+            auto-remediable or simple config, Medium 1-4hr if manual
+            updates, Complex > 4hr if architectural).
+
+            SECTION 3 Effect Misconfigurations:
+            Per flagged policy: current effect, recommended, reason.
+            If none: All correctly configured.
+
+            SECTION 4 Top 5 Remediation Actions:
+            By priority score. Per policy: one specific CLI command for
+            the resourceType. Examples: az network nsg rule create,
+            az storage account update --https-only true, az policy
+            remediation create --name X --policy-assignment Y.
+
+            SECTION 5 Top 10 Non-Compliant Resources:
+            Table: Resource (last segment of resourceId), Resource
+            Group, Resource Type, Age (days), Policies Violated count.
+
+            SECTION 6 HTML Summary:
+            Code block language html. Self-contained page. Style: body
+            background #f3f4f6 font-family Segoe UI. Container max-width
+            1200px background white padding 24px border-radius 12px.
+            Header gradient #0f172a to #1e293b white text. Score card:
+            large compliance number, non-compliant policies count,
+            resources affected. Table of top 10 policies: name,
+            category, effect, resources, effort badge (green/yellow/red).
+            Footer: Generated by Security Copilot.
+        ChildSkills:
+          - ListPolicyDefinitions
+          - GetPolicyDefinition
+          - GetBuiltInPolicyDefinition
+          - ListPolicyAssignments
+          - QueryPolicyComplianceStates
+          - SummarizeCompliance
+          - ListPolicyExemptions
+          - TriggerRemediation
+          - TriggerPolicyScan
+AgentDefinitions:
+  - Name: AzurePolicyOptimizerAgentV3
+    DisplayName: Azure Policy Optimizer Agent V3
+    Description: >-
+      Analyzes non-compliant Azure policies, prioritizes by security impact,
+      assesses effect correctness, and provides remediation with effort estimates.
+    Product: Custom
+    Publisher: Custom
+    AgentSingleInstanceConstraint: Tenant
+    Settings:
+      - Name: Subscription ID
+        Description: >-
+          The Azure subscription ID for which you want to analyze the Azure
+          policies
+        Required: true
+        DefaultValue: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+    Triggers:
+      - Name: DefaultTrigger
+        DefaultPollPeriodSeconds: 86400
+        ProcessSkill: AzurePolicyOptimizerAgentV3.AzurePolicyOptimizerAgentV3
+    RequiredSkillsets:
+      - AzurePolicyManager
+    PreviewState: Private
+    PublisherSource: Custom

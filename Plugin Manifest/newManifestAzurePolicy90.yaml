@@ -1,0 +1,455 @@
+openapi: 3.0.0
+info:
+  title: Azure Policy Governance API
+  description: API for querying Azure Policy definitions, assignments, compliance states, and triggering remediation.
+  version: "1.1"
+servers:
+  - url: https://management.azure.com
+paths:
+  /subscriptions/{subscriptionId}/providers/Microsoft.Authorization/policyDefinitions/{policyDefinitionName}:
+    get:
+      operationId: GetPolicyDefinition
+      summary: Get a custom (subscription-scoped) policy definition by name
+      description: >
+        Retrieves metadata for a Custom policy definition scoped to the subscription.
+        Use this first when looking up a policy by its definition name (GUID).
+        If this returns a 404 or PolicyDefinitionNotFound error, the policy is BuiltIn —
+        call GetBuiltInPolicyDefinition instead.
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The Azure Subscription ID.
+        - name: policyDefinitionName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: >
+            The name (GUID) of the policy definition. Extract the last segment
+            from the policyDefinitionId.
+            Example: if policyDefinitionId is
+            /providers/Microsoft.Authorization/policyDefinitions/ae89ebca-1c92-4898-ac2c-9f63decb045c
+            then this value is ae89ebca-1c92-4898-ac2c-9f63decb045c.
+        - name: api-version
+          in: query
+          required: true
+          schema:
+            type: string
+            default: "2023-04-01"
+      responses:
+        "200":
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  properties:
+                    type: object
+                    properties:
+                      displayName:
+                        type: string
+                        description: Human-readable policy name. Use this in reports instead of the ID.
+                      description:
+                        type: string
+                        description: Full description of policy intent and requirements. Use this to generate specific remediation steps.
+                      policyType:
+                        type: string
+                        description: BuiltIn, Custom, or Static.
+                      metadata:
+                        type: object
+                        properties:
+                          category:
+                            type: string
+                            description: >
+                              The authoritative category (e.g. Security Center, Monitoring, Compute).
+                              Use this over policyDefinitionCategory from QueryPolicyComplianceStates
+                              which may show 'tbd'.
+
+  /providers/Microsoft.Authorization/policyDefinitions/{policyDefinitionName}:
+    get:
+      operationId: GetBuiltInPolicyDefinition
+      summary: Get a built-in (provider-level) policy definition by name
+      description: >
+        Retrieves metadata for a BuiltIn policy definition defined at the provider level.
+        Use this when GetPolicyDefinition returns a 404 or PolicyDefinitionNotFound error —
+        that means the policy is BuiltIn (not scoped to your subscription).
+        Most Azure policies assigned via initiatives (e.g. Microsoft Defender for Cloud,
+        Azure Security Benchmark) are BuiltIn and require this endpoint.
+      parameters:
+        - name: policyDefinitionName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: >
+            The name (GUID) of the built-in policy definition.
+            Extract the last segment from the policyDefinitionId.
+            Example: if policyDefinitionId is
+            /providers/microsoft.authorization/policydefinitions/5eb6d64a-4086-4d7a-92da-ec51aed0332d
+            then this value is 5eb6d64a-4086-4d7a-92da-ec51aed0332d.
+        - name: api-version
+          in: query
+          required: true
+          schema:
+            type: string
+            default: "2023-04-01"
+      responses:
+        "200":
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  properties:
+                    type: object
+                    properties:
+                      displayName:
+                        type: string
+                        description: Human-readable policy name. Use this in reports instead of the ID.
+                      description:
+                        type: string
+                        description: Full description of policy intent and requirements. Use this to generate specific remediation steps.
+                      policyType:
+                        type: string
+                        description: BuiltIn, Custom, or Static.
+                      metadata:
+                        type: object
+                        properties:
+                          category:
+                            type: string
+                            description: >
+                              The authoritative category (e.g. Security Center, Monitoring, Compute).
+                              Use this over policyDefinitionCategory from QueryPolicyComplianceStates
+                              which may show 'tbd'.
+
+  /subscriptions/{subscriptionId}/providers/Microsoft.Authorization/policyAssignments:
+    get:
+      operationId: ListPolicyAssignments
+      summary: Get all policy assignments
+      description: Retrieves all active policy assignments to identify which controls are active.
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The Azure Subscription ID.
+        - name: api-version
+          in: query
+          required: true
+          schema:
+            type: string
+            default: "2023-04-01"
+      responses:
+        "200":
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        properties:
+                          type: object
+                          properties:
+                            scope:
+                              type: string
+                            policyDefinitionId:
+                              type: string
+
+  /subscriptions/{subscriptionId}/providers/Microsoft.PolicyInsights/policyStates/latest/queryResults:
+    post:
+      operationId: QueryPolicyComplianceStates
+      summary: Query resource-level policy compliance states
+      description: >
+        Returns one compliance record per resource per active policy assignment.
+        Use this to see which specific RESOURCES are non-compliant for a given policy.
+        Do NOT use this to count policies — use SummarizeCompliance for that.
+        Use $filter to scope results to a specific policy definition.
+        Use $select to limit returned fields and reduce token usage.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The Azure Subscription ID.
+        - name: api-version
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["2019-10-01"]
+            default: "2019-10-01"
+        - name: $filter
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >
+            OData filter. Use PascalCase field names.
+            Example: ComplianceState eq 'NonCompliant' and PolicyDefinitionId eq '/providers/Microsoft.Authorization/policyDefinitions/{id}'
+        - name: $top
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Maximum records to return. Use small values (3-5) to control token usage.
+        - name: $orderby
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "OData ordering. Example: timestamp desc"
+        - name: $select
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >
+            Comma-separated fields to return. Always use this to limit token usage.
+            Recommended: resourceId,resourceType,resourceGroup,resourceLocation,timestamp
+      responses:
+        "200":
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  "@odata.count":
+                    type: integer
+                  value:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        resourceId:
+                          type: string
+                        policyAssignmentId:
+                          type: string
+                        policyDefinitionId:
+                          type: string
+                        policyDefinitionName:
+                          type: string
+                        policyDefinitionAction:
+                          type: string
+                          description: Policy effect (audit, deny, deployIfNotExists, etc.)
+                        policyDefinitionCategory:
+                          type: string
+                        complianceState:
+                          type: string
+                        resourceType:
+                          type: string
+                        resourceLocation:
+                          type: string
+                        resourceGroup:
+                          type: string
+
+  /subscriptions/{subscriptionId}/providers/Microsoft.PolicyInsights/policyStates/latest/summarize:
+    post:
+      operationId: SummarizeCompliance
+      summary: Summarize compliance by policy definition with counts
+      description: >
+        Returns compliance summary broken down by assignment and policy definition.
+        Each policyDefinition entry includes nonCompliantResources count and effect.
+        A definition is compliant if nonCompliantResources is 0.
+        This is the cheapest and most token-efficient way to identify which policies
+        are non-compliant and how many resources are affected.
+        Always call this FIRST before any other compliance queries.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The Azure Subscription ID.
+        - name: api-version
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["2019-10-01"]
+            default: "2019-10-01"
+        - name: $top
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Maximum number of assignment summaries to return. Use 100 for comprehensive results.
+        - name: $filter
+          in: query
+          required: false
+          schema:
+            type: string
+          description: OData filter. Use PascalCase field names.
+      responses:
+        "200":
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  "@odata.count":
+                    type: integer
+                  value:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        results:
+                          type: object
+                          properties:
+                            nonCompliantResources:
+                              type: integer
+                            nonCompliantPolicies:
+                              type: integer
+                        policyAssignments:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              policyAssignmentId:
+                                type: string
+                              policySetDefinitionId:
+                                type: string
+                              results:
+                                type: object
+                                properties:
+                                  nonCompliantResources:
+                                    type: integer
+                                  nonCompliantPolicies:
+                                    type: integer
+                              policyDefinitions:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    policyDefinitionId:
+                                      type: string
+                                    policyDefinitionReferenceId:
+                                      type: string
+                                    effect:
+                                      type: string
+                                      description: The policy effect (audit, deny, deployIfNotExists, etc.)
+                                    results:
+                                      type: object
+                                      properties:
+                                        nonCompliantResources:
+                                          type: integer
+                                          description: >
+                                            Non-compliant resource count for this definition. 0 = compliant.
+
+  /subscriptions/{subscriptionId}/providers/Microsoft.PolicyInsights/remediations/{remediationName}:
+    put:
+      operationId: TriggerRemediation
+      summary: Trigger remediation task
+      description: Creates a remediation task for non-compliant resources. Only use when the user explicitly requests it.
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The Azure Subscription ID.
+        - name: remediationName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: api-version
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["2021-10-01"]
+            default: "2021-10-01"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                properties:
+                  type: object
+                  required:
+                    - policyAssignmentId
+                  properties:
+                    policyAssignmentId:
+                      type: string
+                    policyDefinitionReferenceId:
+                      type: string
+                      description: Required when remediating a specific definition within an initiative.
+                    resourceDiscoveryMode:
+                      type: string
+                      description: "ExistingNonCompliant or ReEvaluateCompliance"
+      responses:
+        "201":
+          description: Task created.
+        "200":
+          description: Task updated.
+
+  /subscriptions/{subscriptionId}/providers/Microsoft.PolicyInsights/policyStates/latest/triggerEvaluation:
+    post:
+      operationId: TriggerPolicyScan
+      summary: Trigger on-demand compliance evaluation
+      description: Force a compliance re-scan. Only use when the user explicitly requests it.
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The Azure Subscription ID.
+        - name: api-version
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["2019-10-01"]
+            default: "2019-10-01"
+      responses:
+        "202":
+          description: Accepted.
+          headers:
+            Location:
+              schema:
+                type: string

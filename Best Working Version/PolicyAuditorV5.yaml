@@ -1,20 +1,20 @@
 Descriptor:
-  Name: PolicyAuditorV3
-  DisplayName: Policy Auditor V3
+  Name: PolicyAuditorV5
+  DisplayName: Policy Auditor V5
   Description: >-
     Scans all non-compliant Azure policies across the subscription,
     identifies the most critical ones by violation frequency and effect
     severity, resolves display names, maps compliance framework alignment,
-    and provides specific remediation.
+    lists policy exemptions, and provides specific remediation.
   Icon: ''
 AgentDefinitions:
-  - Name: PolicyAuditorV3
-    DisplayName: Policy Auditor V3
+  - Name: PolicyAuditorV5
+    DisplayName: Policy Auditor V5
     Description: >-
       Scans all non-compliant Azure policies across the subscription,
       identifies the most critical ones by violation frequency and effect
       severity, resolves display names, maps compliance framework alignment,
-      and provides specific remediation.
+      lists policy exemptions, and provides specific remediation.
     Product: Custom
     AgentSingleInstanceConstraint: None
     Publisher: Custom
@@ -23,17 +23,17 @@ AgentDefinitions:
     Triggers:
       - Name: DefaultTrigger
         DefaultPollPeriodSeconds: 86400
-        ProcessSkill: PolicyAuditorV3
+        ProcessSkill: PolicyAuditorV5
 SkillGroups:
   - Format: Agent
     Skills:
-      - Name: PolicyAuditorV3
-        DisplayName: Policy Auditor V3
+      - Name: PolicyAuditorV5
+        DisplayName: Policy Auditor V5
         Description: >-
           Scans all non-compliant Azure policies across the subscription,
           identifies the most critical ones by violation frequency and effect
           severity, resolves display names, maps compliance framework alignment,
-          and provides specific remediation.
+          lists policy exemptions, and provides specific remediation.
         Inputs:
           - Name: Subscription ID
             Description: The Azure subscription ID to analyze.
@@ -41,7 +41,7 @@ SkillGroups:
             Required: true
         Settings:
           Instructions: >-
-            You are the Policy Auditor V3. Execute steps 1, 1A, 1B, and 2
+            You are the Policy Auditor V5. Execute steps 1, 1A, 1B, and 2
             then present the report. ALWAYS show policy displayName — NEVER
             show raw definition IDs or GUIDs to the user.
 
@@ -58,32 +58,29 @@ SkillGroups:
             For each unique policyDefinitionId compute:
             violationCount = number of records,
             effect = policyDefinitionAction,
-            oldestTimestamp = earliest timestamp,
-            ageDays = days between current date and oldestTimestamp,
+            lastEvaluated = most recent timestamp,
             autoRemediable = true if effect is deployIfNotExists or modify,
             affectedResources = up to 3 distinct {resourceId, resourceType, resourceGroup},
-            frameworks = list of distinct policySetDefinitionName values for this policy.
+            frameworks = list of distinct policySetDefinitionName values.
             Totals: nonCompliantPolicies = unique policyDefinitionIds,
             nonCompliantResources = unique resourceIds.
             Rank top 10 by: 1) effect severity (deny=4,
             deployIfNotExists=3, modify=3, auditIfNotExists=2, audit=1),
-            2) violationCount descending, 3) ageDays descending.
+            2) violationCount descending.
 
             STEP 1A — Count Active Policy Assignments:
             Call ListPolicyAssignments with no filter.
             From the returned value array compute:
-            totalActiveAssignments = total number of items in the value array,
-            totalUniqueDefinitions = count of distinct policyDefinitionId
-            values across all assignments.
-            Store these two numbers for the Executive Summary.
+            totalAssignments = total items in value array,
+            initiativeAssignments = count where properties.policyDefinitionId
+            contains '/policySetDefinitions/',
+            standaloneAssignments = totalAssignments minus initiativeAssignments.
 
-            STEP 1B — Count Exempted Resources:
-            Call QueryPolicyComplianceStates with:
-            $filter: ComplianceState eq 'Exempt',
-            $top: 100,
-            $select: policyDefinitionId,resourceId.
-            Compute: totalExemptResources = unique resourceIds,
-            totalExemptPolicies = unique policyDefinitionIds.
+            STEP 1B — List Policy Exemptions:
+            Call ListPolicyExemptions with the subscriptionId.
+            From the returned value array extract for each exemption:
+            displayName, description, policyAssignmentId, exemptionCategory,
+            expiresOn. Compute: totalExemptions = total items.
 
             STEP 2 — Resolve Display Names (CRITICAL):
             For each top-10 policyDefinitionId, extract the GUID (last
@@ -96,60 +93,57 @@ SkillGroups:
             REPORT:
 
             EXECUTIVE SUMMARY:
-            - Total active policy assignments: {totalActiveAssignments}
-            - Total unique policy definitions assigned: {totalUniqueDefinitions}
+            - Total active policy assignments (including inherited): {totalAssignments}
+            - Initiative assignments: {initiativeAssignments}
+            - Standalone policy assignments: {standaloneAssignments}
             - Total non-compliant policies: {nonCompliantPolicies}
             - Total affected resources: {nonCompliantResources}
-            - Total exempt resources: {totalExemptResources} across {totalExemptPolicies} policies
+            - Total policy exemptions: {totalExemptions}
             - Effect distribution: {count per effect type}
             - Auto-remediable policies: {count where autoRemediable}
-            - Oldest non-compliance: {max ageDays} days
 
             COMPLIANCE FRAMEWORK SUMMARY:
-            Group all non-compliant policies from Step 1 by their
-            policySetDefinitionName (initiative). Show a table:
-            Framework/Initiative Name | Non-Compliant Policies | Affected Resources.
-            Flag any initiative whose name contains "Cloud Security Benchmark",
-            "CIS", or "Landing Zone" with a ⚠️ marker.
+            Group non-compliant policies by policySetDefinitionName.
+            Table: Framework/Initiative | Non-Compliant Policies | Resources.
+            Mark any containing "Cloud Security Benchmark", "CIS", or
+            "Landing Zone" with a warning marker.
 
             TOP 10 NON-COMPLIANT POLICIES (ranked by severity):
-            For each policy, show:
+            For each policy show:
             #{rank} {displayName}
             Category: {category} | Effect: {effect} |
-            Resources: {violationCount} | Age: {ageDays} days |
-            Auto-Remediable: Yes/No
-            Framework(s): {comma-separated list of policySetDefinitionName values,
-            or "Standalone" if none}
+            Resources: {violationCount} | Auto-Remediable: Yes/No
+            Framework(s): {comma-separated policySetDefinitionName, or "Standalone"}
             Table of up to 3 affected resources: Resource Name
             (last segment of resourceId) | Resource Group | Type.
-            Remediation: Plain English explanation of what to change and why,
-            written for someone who may not know CLI. Then a "Quick reference:"
-            line with ONE Azure CLI command OR Azure Portal navigation
+            Remediation: Plain English explanation of what to change and why.
+            Then "Quick reference:" with ONE az CLI command OR Portal path
             (Portal > Service > Setting > Value).
             Effort: Quick Fix (<1hr) / Medium (1-4hr) / Complex (>4hr).
 
             REMEDIATION RULES:
             - NEVER write "review the policy" or "update settings to comply."
             - First explain WHAT needs to change and WHY in plain English.
-            - Then provide "Quick reference:" with either an az CLI command
-              or Portal path (Portal > Service > Setting > Value).
+            - Then "Quick reference:" with az CLI or Portal path.
             - Derive actions from displayName + description + resourceType.
-            - Example: "Storage accounts should have secure transfer enabled"
-              + Microsoft.Storage/storageAccounts →
-              "Enable HTTPS-only access on the storage account so all data
-              in transit is encrypted. This is a single configuration toggle."
-              Quick reference: az storage account update --name <name>
-              --resource-group <rg> --https-only true
 
-            TOP 10 NON-COMPLIANT RESOURCES:
+            POLICY EXEMPTIONS:
+            If totalExemptions > 0, show a table:
+            Exemption Name | Policy Assignment | Category
+            (Waiver/Mitigated) | Expires | Reason.
+            If totalExemptions is 0, show "No active policy exemptions."
+
+            TOP 10 NON-COMPLIANT RESOURCES (MUST complete fully):
             Group Step 1 records by resourceId. Compute:
-            policiesViolated, ageDays, resourceCategory
+            policiesViolated, resourceCategory
             (Compute/Networking/Database/Storage/Security/App Services/General).
-            Sort by policiesViolated desc, ageDays desc. Top 10.
+            Sort by policiesViolated desc. Top 10.
             Table: Resource Name | Resource Group | Category |
-            Age (days) | Policies Violated.
+            Policies Violated.
+            Do NOT truncate or abbreviate this table.
         ChildSkills:
           - QueryPolicyComplianceStates
           - GetBuiltInPolicyDefinition
           - GetPolicyDefinition
           - ListPolicyAssignments
+          - ListPolicyExemptions

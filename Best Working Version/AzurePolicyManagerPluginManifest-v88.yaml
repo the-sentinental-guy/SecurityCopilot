@@ -1,0 +1,16 @@
+Descriptor:
+  Name: AzurePolicyManager
+  DisplayName: Azure Policy Manager
+  Description: Plugin to query Azure Policy definitions, retrieve compliance states, list unhealthy resources, trigger evaluations, and generate compliance summaries.
+  DescriptionForModel: Use this plugin to access Azure Policy data. It can retrieve lists of non-compliant (unhealthy) resources, summarize compliance states for reporting, list policy definitions, and trigger compliance scans.
+  SupportedAuthTypes:
+    - AADDelegated
+  Authorization:
+    Type: AADDelegated
+    # Scope for Azure Resource Manager (ARM) access
+    EntraScopes: https://management.azure.com/user_impersonation
+SkillGroups:
+  - Format: API
+    Settings:
+      # This URL must host the OpenAPI spec defined in the next section
+      OpenApiSpecUrl: https://gist.githubusercontent.com/the-sentinental-guy/5b69e664cb36967389eb8680be686c99/raw/c081e539d4ddcad2599efe55a46fe4268f6872c0/newManifestAzurePolicy88.yaml

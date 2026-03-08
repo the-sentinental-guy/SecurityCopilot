@@ -505,6 +505,84 @@ paths:
                                             Number of non-compliant resources for this
                                             definition. If 0, this definition is compliant.
 
+  /subscriptions/{subscriptionId}/providers/Microsoft.Authorization/policyExemptions:
+    get:
+      operationId: ListPolicyExemptions
+      summary: List all policy exemptions in the subscription
+      description: >
+        Retrieves all policy exemptions for a subscription. Use this to find
+        resources that have been exempted from specific policy assignments.
+        Each exemption includes the exemption category (Waiver or Mitigated),
+        the policy assignment it applies to, and optional expiration date.
+        Cross-reference with non-compliant policies to identify exempted resources.
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: >
+            The Azure Subscription ID provided by the user.
+            This is a GUID such as a1b2c3d4-e5f6-7890-abcd-ef1234567890.
+            Extract this value from the user's query.
+        - name: api-version
+          in: query
+          required: true
+          schema:
+            type: string
+            default: "2022-07-01-preview"
+        - name: $filter
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >
+            OData filter expression. Supported filters include:
+            atScope() - exemptions at the current scope only,
+            policyAssignmentId eq '{value}' - filter by assignment.
+      responses:
+        "200":
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Full ARM resource ID of the exemption.
+                        name:
+                          type: string
+                        properties:
+                          type: object
+                          properties:
+                            policyAssignmentId:
+                              type: string
+                              description: The policy assignment this exemption applies to.
+                            policyDefinitionReferenceIds:
+                              type: array
+                              items:
+                                type: string
+                              description: Specific definitions within an initiative that are exempted.
+                            exemptionCategory:
+                              type: string
+                              description: Waiver (temporary risk acceptance) or Mitigated (compensating control).
+                            displayName:
+                              type: string
+                            description:
+                              type: string
+                            expiresOn:
+                              type: string
+                              format: date-time
+                              description: When the exemption expires, if set.
+                            metadata:
+                              type: object
+
   /subscriptions/{subscriptionId}/providers/Microsoft.PolicyInsights/remediations/{remediationName}:
     put:
       operationId: TriggerRemediation

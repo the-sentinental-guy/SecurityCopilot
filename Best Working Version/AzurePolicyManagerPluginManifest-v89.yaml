@@ -13,4 +13,4 @@ SkillGroups:
   - Format: API
     Settings:
       # This URL must host the OpenAPI spec defined in the next section
-      OpenApiSpecUrl: https://gist.githubusercontent.com/the-sentinental-guy/5b69e664cb36967389eb8680be686c99/raw/c081e539d4ddcad2599efe55a46fe4268f6872c0/newManifestAzurePolicy88.yaml
+      OpenApiSpecUrl: https://gist.githubusercontent.com/the-sentinental-guy/f61105171230490b72d29851bbc59bcd/raw/3fd6a3333bd9aaf7743cdcafbf3b3df3b942f1b1/newManifestAzurePolicy89.yaml

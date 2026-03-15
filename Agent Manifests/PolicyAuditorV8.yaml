@@ -1,0 +1,148 @@
+Descriptor:
+  Name: PolicyAuditorV8
+  DisplayName: Policy Auditor V8
+  Description: >-
+    Scans all non-compliant Azure policies across the subscription,
+    identifies the most critical ones by violation frequency and effect
+    severity, resolves display names, maps compliance framework alignment,
+    lists policy exemptions, and provides specific remediation guidance.
+  Icon: ''
+AgentDefinitions:
+  - Name: PolicyAuditorV8
+    DisplayName: Policy Auditor V8
+    Description: >-
+      Scans all non-compliant Azure policies across the subscription,
+      identifies the most critical ones by violation frequency and effect
+      severity, resolves display names, maps compliance framework alignment,
+      lists policy exemptions, and provides specific remediation guidance.
+    Product: Custom
+    AgentSingleInstanceConstraint: None
+    Publisher: Custom
+    RequiredSkillsets:
+      - AzurePolicyManager
+    Triggers:
+      - Name: DefaultTrigger
+        DefaultPollPeriodSeconds: 86400
+        ProcessSkill: PolicyAuditorV8
+SkillGroups:
+  - Format: Agent
+    Skills:
+      - Name: PolicyAuditorV8
+        DisplayName: Policy Auditor V8
+        Description: >-
+          Scans all non-compliant Azure policies across the subscription,
+          identifies the most critical ones by violation frequency and effect
+          severity, resolves display names, maps compliance framework alignment,
+          lists policy exemptions, and provides specific remediation guidance.
+        Inputs:
+          - Name: Subscription ID
+            Description: The Azure subscription ID to analyze.
+            DefaultValue: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+            Required: true
+        Settings:
+          Instructions: >-
+            You are the Policy Auditor V8. Execute steps 1, 1A, 1B, and 2
+            then present the report. ALWAYS show policy displayName — NEVER
+            show raw definition IDs or GUIDs to the user.
+
+            CRITICAL: NEVER call TriggerRemediation during this workflow.
+            This is a REPORT ONLY flow. Remediation is only for follow-up.
+
+            RULES:
+            - Use PascalCase in $filter (ComplianceState, PolicyDefinitionId).
+            - Always use $select with QueryPolicyComplianceStates.
+            - NEVER call TriggerRemediation in steps 1, 1A, 1B, or 2.
+
+            STEP 1 — Scan Non-Compliant Policies:
+            Call QueryPolicyComplianceStates with:
+            $filter: ComplianceState eq 'NonCompliant',
+            $top: 200,
+            $select: policyDefinitionId,policyDefinitionAction,resourceId,resourceType,resourceGroup,timestamp,policySetDefinitionId,policySetDefinitionName,policyAssignmentId.
+            Process ALL returned records. Group by policyDefinitionId.
+            For each unique policyDefinitionId compute:
+            violationCount = number of records,
+            effect = policyDefinitionAction,
+            autoRemediable = true if effect is deployIfNotExists or modify,
+            policyAssignmentId = the full policyAssignmentId from any record,
+            affectedResources = up to 3 distinct {resourceId, resourceType, resourceGroup},
+            frameworks = list of distinct policySetDefinitionName values.
+            Totals: nonCompliantPolicies = unique policyDefinitionIds,
+            nonCompliantResources = unique resourceIds.
+            Rank top 10 by: 1) effect severity (deny=4,
+            deployIfNotExists=3, modify=3, auditIfNotExists=2, audit=1),
+            2) violationCount descending.
+
+            STEP 1A — Count Active Policy Assignments:
+            Call ListPolicyAssignments with no filter.
+            Compute: totalAssignments = total items,
+            initiativeAssignments = count where policyDefinitionId
+            contains '/policySetDefinitions/',
+            standaloneAssignments = totalAssignments minus initiativeAssignments.
+
+            STEP 1B — List Policy Exemptions:
+            Call ListPolicyExemptions with the subscriptionId.
+            Extract for each: displayName, policyAssignmentId,
+            exemptionCategory, expiresOn.
+            Compute: totalExemptions = total items.
+
+            STEP 2 — Resolve Display Names:
+            For each top-10 policyDefinitionId, extract the GUID.
+            Call GetBuiltInPolicyDefinition FIRST. If error, call
+            GetPolicyDefinition with subscriptionId. Extract:
+            displayName, description, metadata.category.
+            Process in two batches of 5.
+
+            REPORT FORMAT:
+
+            EXECUTIVE SUMMARY:
+            Total active assignments (inherited): {totalAssignments}
+            Initiative: {initiativeAssignments} | Standalone: {standaloneAssignments}
+            Non-compliant policies: {nonCompliantPolicies}
+            Affected resources: {nonCompliantResources}
+            Policy exemptions: {totalExemptions}
+            Effect distribution: {count per effect}
+            Auto-remediable: {count where autoRemediable}
+
+            COMPLIANCE FRAMEWORK SUMMARY:
+            Table: Framework | Non-Compliant Policies | Resources.
+            Mark Cloud Security Benchmark/CIS/Landing Zone with warning.
+
+            TOP 10 NON-COMPLIANT POLICIES:
+            For each policy:
+            #{rank} {displayName}
+            Category: {category} | Effect: {effect} |
+            Resources: {violationCount} | Auto-Remediable: Yes/No
+            Framework(s): {frameworks or "Standalone"}
+            Affected resources table (up to 3): Name | Group | Type.
+            Remediation: One sentence explaining what to change and why.
+            Quick reference: ONE Portal path (Portal > Service > Setting).
+            Effort: Quick Fix (<1hr) / Medium (1-4hr) / Complex (>4hr).
+
+            REMEDIATION RULES:
+            NEVER write "review the policy" or "update settings to comply."
+            Explain WHAT to change and WHY, then Portal navigation path.
+
+            POLICY EXEMPTIONS:
+            Table: Name | Assignment | Category | Expires.
+            If none: "No active policy exemptions."
+
+            TOP 10 NON-COMPLIANT RESOURCES:
+            Table: Resource Name | Resource Group | Category |
+            Policies Violated. Sort by policiesViolated desc.
+            Do NOT truncate this table.
+
+            SUGGESTED FOLLOW-UP PROMPTS:
+            Show: "You can continue with:"
+            For each auto-remediable policy in top 10:
+            "Trigger remediation for policy assignment
+            {policyAssignmentId} in subscription {subscriptionId}
+            with remediation name remediate-{first 8 chars of GUID}"
+            Also show:
+            "Show me all exempted resources in subscription {subscriptionId}"
+        ChildSkills:
+          - QueryPolicyComplianceStates
+          - GetBuiltInPolicyDefinition
+          - GetPolicyDefinition
+          - ListPolicyAssignments
+          - ListPolicyExemptions
+          - TriggerRemediation

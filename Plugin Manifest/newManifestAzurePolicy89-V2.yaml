@@ -530,6 +530,7 @@ paths:
           required: true
           schema:
             type: string
+            enum: ["2022-07-01-preview"]
             default: "2022-07-01-preview"
         - name: $filter
           in: query
@@ -586,14 +587,15 @@ paths:
   /subscriptions/{subscriptionId}/providers/Microsoft.PolicyInsights/remediations/{remediationName}:
     put:
       operationId: TriggerRemediation
-      summary: Trigger remediation task
+      summary: Trigger remediation task for a non-compliant policy
       description: >
         Creates a remediation task to automatically fix non-compliant resources
         for a specific policy assignment. Use this when the user asks to
         trigger, start, run, create, or initiate remediation for a policy.
         Only works for policies with deployIfNotExists or modify effect.
         Requires the full policyAssignmentId and a unique remediationName.
-        Set resourceDiscoveryMode to ExistingNonCompliant.
+        Set resourceDiscoveryMode to ExistingNonCompliantto fix
+        existing non-compliant resources.
       parameters:
         - name: subscriptionId
           in: path
@@ -603,7 +605,6 @@ paths:
           description: >
             The Azure Subscription ID provided by the user.
             This is a GUID such as a1b2c3d4-e5f6-7890-abcd-ef1234567890.
-            Extract this value from the user's query.
         - name: remediationName
           in: path
           required: true
